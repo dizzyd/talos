@@ -1,0 +1,17 @@
+{application, talos,
+ [{description, "talos: Distributed Testing Framework"},
+  {vsn, "0.1"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel,
+                  stdlib,
+                  sasl,
+                  lager]},
+  {env, [
+         {source_dir, ""},
+         {code_paths, []},
+         {results_dir, "results"},
+         {platforms, []},
+         {ssh_connect_timeout, 10000}
+        ]}
+]}.
