@@ -45,7 +45,7 @@ init(Conn) ->
     #state { packager = Packager, conn = Conn, sftp = Sftp }.
 
 package_installed(#state { packager = rpm } = State, PackageName) ->
-    case ssh_cmd:run(State#state.conn, "yum -q " ++ PackageName) of
+    case ssh_cmd:run(State#state.conn, "rpm -q " ++ PackageName) of
         {ok, _} ->
             {true, State};
         {error, _} ->
@@ -57,7 +57,7 @@ install_package_file(#state { packager = rpm } = State, Filename) ->
     case ssh_sftp_x:cp_to(State#state.sftp, Filename, TargetFile) of
         ok ->
             %% File is copied to remote system -- install that
-            case ssh_cmd:run(State#state.conn, "rpm -Uvh " ++ TargetFile) of
+            case ssh_cmd:run(State#state.conn, "sudo rpm -Uvh " ++ TargetFile) of
                 ok ->
                     {ok, State};
                 {error, Reason} ->
@@ -67,11 +67,21 @@ install_package_file(#state { packager = rpm } = State, Filename) ->
             {error, {scp_error, Reason}, State}
     end.
 
-install_package(State, PackageName) ->
-    ok.
+install_package(#state { packager = rpm } = State, PackageName) ->
+    case ssh_cmd:run(State#state.conn, "sudo yum install -y " ++ PackageName) of
+        {ok, _} ->
+            {ok, State};
+        {error, Reason} ->
+            {error, Reason, State}
+    end.
 
 remove_package(State, PackageName) ->
-    ok.
+    case ssh_cmd:run(State#state.conn, "sudo rpm -e " ++ PackageName) of
+        {ok, _} ->
+            {ok, State};
+        {error, Reason} ->
+            {error, Reason, State}
+    end.
 
 service_up(State, Service) ->
     ok.
