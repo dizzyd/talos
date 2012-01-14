@@ -38,37 +38,15 @@ file_exists(ChannelPid, Filename) ->
     end.
 
 cp_to(ChannelPid, LocalFilename, RemoteFilename) ->
-    case file:open(LocalFilename, [read, binary, read_ahead, raw]) of
-        {ok, LocalFile} ->
-            case ssh_sftp:open(ChannelPid, RemoteFilename, [write, creat, append, binary]) of
-                {ok, RemoteFile} ->
-                    try
-                        Read = fun() -> file:read(LocalFile, ?BLOCK_SIZE) end,
-                        Write = fun(Data) -> ssh_sftp:write_file(ChannelPid, RemoteFile, Data) end,
-                        copy_blocks(LocalFilename, Read, RemoteFilename, Write)
-                    after
-                        file:close(LocalFile),
-                        ssh_sftp:close(ChannelPid, RemoteFile)
-                    end;
-                {error, Reason} ->
-                    {error, {RemoteFilename, Reason}}
-            end;
-        {error, Reason} ->
-            {error, {LocalFilename, Reason}}
-    end.
-
-
-copy_blocks(ReadFile, ReadFn, WriteFile, WriteFn) ->
-    case ReadFn() of
+    %% TODO: copy by block instead of reading whole file into memory
+    case file:read_file(LocalFilename) of
         {ok, Data} ->
-            case WriteFn(Data) of
+            case ssh_sftp:write_file(ChannelPid, RemoteFilename, Data) of
                 ok ->
-                    copy_blocks(ReadFile, ReadFn, WriteFile, WriteFn);
+                    ok;
                 {error, Reason} ->
-                    {error, {WriteFile, Reason}}
+                    {error, {remote, Reason}}
             end;
-        eof ->
-            ok;
         {error, Reason} ->
-            {error, {ReadFile, Reason}}
+            {error, {local, Reason}}
     end.
