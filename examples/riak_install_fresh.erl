@@ -18,7 +18,9 @@ run_single(Host) ->
     %% TODO: What about how the package name is different on solaris?
     lager:info("Riak package installed? ~p\n", [talos_host:package_installed(Host, "riak")]),
 
-    lager:info("~p\n", [talos_host:install_package_file(Host, "/Users/dizzyd/Downloads/riak_ee/riak-ee-0.14.2/riak-ee-0.14.2-1.el5.x86_64.rpm")]).
+    lager:info("~p\n", [talos_host:install_package_file(Host, "/Users/dizzyd/Downloads/be/riak-1.0.2/riak-1.0.2-1.el5.x86_64.rpm")]),
+    
+    lager:info("~p\n", [talos_host:install_package(Host, "git")]).
 
     
 
