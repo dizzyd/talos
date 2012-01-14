@@ -32,7 +32,9 @@
          connect/1,
          cmd/2,
          package_installed/2,
-         install_package_file/2]).
+         install_package_file/2,
+         install_package/2,
+         remove_package/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -57,13 +59,20 @@ connect(Pid) ->
     gen_server:call(Pid, connect, infinity).
 
 cmd(Pid, Cmd) ->
-    gen_server:call(Pid, {cmd, Cmd}).
+    gen_server:call(Pid, {cmd, Cmd}, infinity).
 
 package_installed(Pid, PackageName) ->
-    gen_server:call(Pid, {package_installed, PackageName}).
+    gen_server:call(Pid, {package_installed, PackageName}, infinity).
 
 install_package_file(Pid, Filename) ->
-    gen_server:call(Pid, {install_package_file, Filename}).
+    gen_server:call(Pid, {install_package_file, Filename}, infinity).
+
+install_package(Pid, PackageName) ->
+    gen_server:call(Pid, {install_package, PackageName}, infinity).
+
+remove_package(Pid, PackageName) ->
+    gen_server:call(Pid, {remove_package, PackageName}, infinity).
+
 
 %% ====================================================================
 %% gen_server callbacks
@@ -106,6 +115,22 @@ handle_call({package_installed, PackageName}, _From, State) ->
 handle_call({install_package_file, Filename}, _From, State) ->
     PState = State#state.platform_state,
     case (State#state.platform):install_package_file(PState, Filename) of
+        {ok, PState1} ->
+            {reply, ok, State#state { platform_state = PState1 }};
+        {error, Reason, PState1} ->
+            {reply, {error, Reason}, State#state { platform_state = PState1}}
+    end;
+handle_call({install_package, PackageName}, _From, State) ->
+    PState = State#state.platform_state,
+    case (State#state.platform):install_package(PState, PackageName) of
+        {ok, PState1} ->
+            {reply, ok, State#state { platform_state = PState1 }};
+        {error, Reason, PState1} ->
+            {reply, {error, Reason}, State#state { platform_state = PState1}}
+    end;
+handle_call({remove_package, PackageName}, _From, State) ->
+    PState = State#state.platform_state,
+    case (State#state.platform):remove_package(PState, PackageName) of
         {ok, PState1} ->
             {reply, ok, State#state { platform_state = PState1 }};
         {error, Reason, PState1} ->
